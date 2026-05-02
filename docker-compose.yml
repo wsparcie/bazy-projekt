@@ -18,6 +18,20 @@ services:
       retries: 15
       start_period: 180s
 
+  cloudbeaver:
+    image: dbeaver/cloudbeaver:latest
+    container_name: pegasus-cloudbeaver
+    ports:
+      - "8978:8978"
+    volumes:
+      - cloudbeaver-data:/opt/cloudbeaver/workspace
+    depends_on:
+      oracle-xe:
+        condition: service_healthy
+    restart: unless-stopped
+
 volumes:
   oracle-data:
     name: pegasus-oracle-data
+  cloudbeaver-data:
+    name: pegasus-cloudbeaver-data

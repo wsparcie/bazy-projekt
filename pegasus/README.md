@@ -178,6 +178,28 @@ Opcje:
 > **SQL Developer**: wybierz typ połączenia _Basic_, wpisz powyższe dane.  
 > **DBeaver**: sterownik _Oracle_, Service Name = `XEPDB1`.
 
+### Panel administracyjny (CloudBeaver)
+
+`docker compose up -d` uruchamia również **CloudBeaver** — przeglądarkowy interfejs do bazy.
+
+Po uruchomieniu: **http://localhost:8978**
+
+Pierwsze uruchomienie poprosi o założenie lokalnego konta admina (dowolny login/hasło).  
+Następnie dodaj nowe połączenie:
+
+| Parametr     | Wartość                               |
+| ------------ | ------------------------------------- |
+| Driver       | Oracle                                |
+| Host         | `oracle-xe`                           |
+| Port         | `1521`                                |
+| Database     | `XEPDB1`                              |
+| Service type | **Service Name** (nie SID!)           |
+| Użytkownik   | `PEGASUS`                             |
+| Hasło        | _(wartość PEGASUS_PASSWORD z `.env`)_ |
+
+> Jako hosta wpisz `oracle-xe` (nazwa kontenera w sieci Dockera), nie `localhost`.  
+> W sekcji MISC ustaw **Service type = Service Name** — `XEPDB1` to PDB (Pluggable Database), nie SID.
+
 ### Zatrzymanie / reset
 
 ```bash
