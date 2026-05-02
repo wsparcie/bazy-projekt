@@ -81,7 +81,9 @@ def _split_statements(content: str) -> list[str]:
         # Terminator bloku PL/SQL
         if stripped == "/":
             stmt = "\n".join(current).strip()
-            # NIE robimy rstrip(";") – PL/SQL potrzebuje ";" po END SP_...
+            # Usuń samodzielne linie ";" dodawane przez formater SQL (np. VS Code)
+            # po "END SP_name;". Oracle widzi podwójne ";" jako dwa polecenia → INVALID.
+            stmt = re.sub(r"(\n[ \t]*;[ \t]*)+$", "", stmt).strip()
             if re.sub(r"--[^\n]*", "", stmt).strip():
                 statements.append(stmt)
             current = []

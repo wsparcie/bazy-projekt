@@ -413,7 +413,6 @@ BEGIN
                 v_opinion_timeline, v_digital_fp, SYSTIMESTAMP);
     COMMIT;
 END SP_CALCULATE_USER_PROFILE;
-;
 /
 
 -- ============================================================
@@ -425,7 +424,6 @@ BEGIN
         SP_CALCULATE_USER_PROFILE(u.USER_ID);
     END LOOP;
 END SP_CALCULATE_ALL_PROFILES;
-;
 /
 
 -- ============================================================
@@ -458,7 +456,6 @@ BEGIN
 
     COMMIT;
 END SP_BUILD_SOCIAL_CLUSTERS;
-;
 /
 
 -- ============================================================
