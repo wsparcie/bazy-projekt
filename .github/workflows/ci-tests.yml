@@ -46,9 +46,10 @@ jobs:
               with:
                   python-version: "3.12"
                   cache: pip
+                  cache-dependency-path: pegasus/tests/requirements.txt
 
             - name: Install dependencies
-              run: pip install oracledb pytest pytest-timeout
+              run: pip install -r pegasus/tests/requirements.txt
 
             - name: Wait for Oracle XE to accept connections
               run: |
