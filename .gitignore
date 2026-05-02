@@ -1,0 +1,39 @@
+# Dane dostepowe
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.hypothesis/
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Srodowiska wirtualne
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# Oracle / SQL Developer
+*.log
+*.trc
+*.bak
+
+# Tymczasowe pliki setupu
+*.sql.tmp
+_run.sql
+_master.sql
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+

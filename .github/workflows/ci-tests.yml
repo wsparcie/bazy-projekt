@@ -1,0 +1,87 @@
+name: PEGASUS DB – CI Tests
+
+on:
+    push:
+        paths:
+            - "pegasus/sql/**"
+            - "pegasus/tests/**"
+            - ".github/workflows/ci-tests.yml"
+    pull_request:
+        paths:
+            - "pegasus/sql/**"
+            - "pegasus/tests/**"
+    workflow_dispatch:
+
+jobs:
+    test:
+        name: Integration Tests (Oracle XE 21c)
+        runs-on: ubuntu-latest
+        timeout-minutes: 20
+
+        services:
+            oracle:
+                image: gvenzl/oracle-xe:21-slim
+                env:
+                    ORACLE_PASSWORD: ${{ env.ORACLE_SYS_PASSWORD }}
+                ports:
+                    - 1521:1521
+                options: >-
+                    --health-cmd healthcheck.sh --health-interval 20s
+                    --health-timeout 10s --health-retries 20
+                    --health-start-period 180s
+
+        env:
+            ORACLE_SYS_PASSWORD: OracleCIPass99
+            PEGASUS_PASSWORD: PegasusCIPass99
+            DB_HOST: localhost
+            DB_PORT: "1521"
+            DB_SERVICE: XEPDB1
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Set up Python 3.12
+              uses: actions/setup-python@v5
+              with:
+                  python-version: "3.12"
+                  cache: pip
+
+            - name: Install dependencies
+              run: pip install oracledb pytest pytest-timeout
+
+            - name: Wait for Oracle XE to accept connections
+              run: |
+                  python - <<'PY'
+                  import time, oracledb, os, sys
+
+                  dsn = f"localhost:1521/XEPDB1"
+                  pwd = os.environ["ORACLE_SYS_PASSWORD"]
+                  deadline = time.time() + 120   # max 2 minuty dodatkowe po health-check kontenera
+
+                  while time.time() < deadline:
+                      try:
+                          c = oracledb.connect(user="sys", password=pwd, dsn=dsn,
+                                               mode=oracledb.AUTH_MODE_SYSDBA)
+                          c.close()
+                          print("Oracle XE: accepting connections – OK")
+                          sys.exit(0)
+                      except Exception as e:
+                          print(f"  waiting... ({e})")
+                          time.sleep(5)
+
+                  print("ERROR: Oracle XE did not become available in time", file=sys.stderr)
+                  sys.exit(1)
+                  PY
+
+            - name: Run integration tests
+              run: pytest pegasus/tests/test_database.py -v --tb=short --timeout=120
+
+            - name: Upload test results
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: test-results
+                  path: |
+                      .pytest_cache/
+                  retention-days: 7

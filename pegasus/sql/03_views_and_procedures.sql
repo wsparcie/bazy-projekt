@@ -3,6 +3,9 @@
 -- Uruchamiac po 02_insert_test_data.sql
 -- ============================================================
 
+-- Wymagane: blanklines wewnatrz blokow PL/SQL nie przerywaja kompilacji
+SET SQLBLANKLINES ON
+
 -- ============================================================
 -- Widok: Aktywnosc uzytkownika (sumaryczna)
 -- ============================================================
@@ -306,7 +309,7 @@ BEGIN
                 JOIN POSTS p ON p.POST_ID = s.POST_ID
                 WHERE s.FROM_USER_ID = p_user_id
                 GROUP BY p.CATEGORY_ID
-            ) raw
+            ) interaction_data
             GROUP BY CATEGORY_ID
         ) src
         JOIN POST_CATEGORIES pc ON pc.CATEGORY_ID = src.CATEGORY_ID;
@@ -369,12 +372,12 @@ BEGIN
     ELSE                                         v_opinion_timeline := 'STABILNA';
     END IF;
 
-    v_digital_fp := STANDARD_HASH(
+    SELECT STANDARD_HASH(
         TO_CHAR(p_user_id) || '|' || v_political_lean || '|' ||
         TO_CHAR(v_engagement) || '|' || NVL(TO_CHAR(v_preferred_cat), 'NULL') || '|' ||
         v_activity_profile,
         'SHA256'
-    );
+    ) INTO v_digital_fp FROM DUAL;
 
     IF v_extremism > 0 THEN
         UPDATE USERS
@@ -384,8 +387,8 @@ BEGIN
     END IF;
 
     MERGE INTO USER_PROFILES up
-    USING (SELECT p_user_id AS UID FROM DUAL) src
-    ON (up.USER_ID = src.UID)
+    USING (SELECT p_user_id AS SRC_USER_ID FROM DUAL) src
+    ON (up.USER_ID = src.SRC_USER_ID)
     WHEN MATCHED THEN
         UPDATE SET
             PREFERRED_CATEGORY_ID      = v_preferred_cat,

@@ -36,6 +36,7 @@ pegasus/
 │   ├── 04_state_user.puml                ← diagram stanów użytkownika
 │   └── 05_erd.puml                       ← ERD (PlantUML)
 └── sql/
+    ├── 00_setup_schema.sql               ← tworzenie użytkownika PEGASUS (tylko lokalnie / XE)
     ├── 01_create_tables.sql              ← DDL: tabele, sekwencje, więzy
     ├── 02_insert_test_data.sql           ← dane testowe (słowniki + przykładowi użytkownicy)
     ├── 03_views_and_procedures.sql       ← widoki analityczne + procedura SP_CALCULATE_PROFILE
@@ -97,12 +98,101 @@ pegasus/
 
 ## Kolejność uruchamiania skryptów SQL
 
+**Oracle Autonomous Database (chmura)** — jako użytkownik `ADMIN` w SQL Developer Web:
+
 ```sql
--- Jako użytkownik ADMIN w SQL Developer Web:
 @01_create_tables.sql          -- tworzy tabele i sekwencje
 @02_insert_test_data.sql       -- słowniki i dane testowe
 @03_views_and_procedures.sql   -- widoki i procedura SP_CALCULATE_PROFILE
 @04_demo_data.sql              -- dane demo
+```
+
+**Lokalnie (Docker + Oracle XE)** — patrz sekcja [Uruchamianie lokalnie](#uruchamianie-lokalnie-docker--oracle-xe):
+
+```sql
+-- Jako SYS:
+@00_setup_schema.sql           -- tworzy użytkownika PEGASUS (jednorazowo)
+
+-- Jako PEGASUS:
+@01_create_tables.sql
+@02_insert_test_data.sql
+@03_views_and_procedures.sql
+@04_demo_data.sql
+```
+
+---
+
+## Uruchamianie lokalnie (Docker + Oracle XE)
+
+Alternatywa dla Oracle Autonomous Database (chmura) — każdy może uruchomić bazę na swoim komputerze bez konta Oracle Cloud.
+
+### Wymagania
+
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Windows / macOS / Linux)
+
+### Krok 1 — uruchom kontener
+
+```bash
+docker compose up -d
+```
+
+Obraz `gvenzl/oracle-xe:21-slim` (~1 GB) zostanie pobrany automatycznie.  
+Pierwsze uruchomienie trwa **2–4 minuty** (inicjalizacja bazy). Gotowość sprawdzisz przez:
+
+```bash
+docker logs pegasus-db --tail 10
+# Szukaj linii: DATABASE IS READY TO USE!
+```
+
+### Krok 2 — utwórz schemat PEGASUS
+
+Ustaw hasło dla użytkownika PEGASUS i uruchom skrypt konfiguracyjny:
+
+```bash
+# Ustaw hasło jako zmienną środowiskową (wybierz własne, silne hasło)
+export PEGASUS_PASSWORD='twoje_silne_haslo'
+
+# Połącz się jako SYS i uruchom skrypt
+docker exec -it pegasus-db sqlplus sys/Admin1234@XEPDB1 as sysdba @/sql/00_setup_schema.sql
+# SQL*Plus zapyta o wartość &&PEGASUS_PASSWORD — wpisz swoje hasło
+```
+
+Skrypt tworzy użytkownika `PEGASUS` z podanym przez Ciebie hasłem i nadaje mu wszystkie potrzebne uprawnienia.
+
+### Krok 3 — uruchom skrypty projektu
+
+```bash
+# Połącz się jako PEGASUS (użyj hasła wybranego w kroku 2)
+docker exec -it pegasus-db sqlplus PEGASUS/<twoje_haslo>@XEPDB1
+
+# Następnie wewnątrz SQL*Plus:
+@/sql/01_create_tables.sql
+@/sql/02_insert_test_data.sql
+@/sql/03_views_and_procedures.sql
+@/sql/04_demo_data.sql
+```
+
+### Dane połączenia (SQL Developer / DBeaver / inne narzędzia)
+
+| Parametr     | Wartość                 |
+| ------------ | ----------------------- |
+| Host         | `localhost`             |
+| Port         | `1521`                  |
+| Service name | `XEPDB1`                |
+| Użytkownik   | `PEGASUS`               |
+| Hasło        | _(ustawione w kroku 2)_ |
+
+> **SQL Developer**: wybierz typ połączenia _Basic_, wpisz powyższe dane.  
+> **DBeaver**: sterownik _Oracle_, Service Name = `XEPDB1`.
+
+### Zatrzymanie / reset
+
+```bash
+# Zatrzymaj kontener (dane zachowane)
+docker compose down
+
+# Usuń kontener + dane (pełny reset)
+docker compose down -v
 ```
 
 ---
