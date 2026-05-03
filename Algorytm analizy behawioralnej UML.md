@@ -1,87 +1,93 @@
 classDiagram
-  %% PEGASUSownik - UML (analiza biznesowa i behawioralna dla bazy danych)
+  %% PEGASUSownik - Diagram Klas (Algorytm Analizy) zmapowany na struktury bazy
 
-  class Uzytkownik {
-    +id UUID
+  class USERS {
+    +id INT
     +imie string
     +nazwisko string
+    +email string
+    +status string
+    +rola_id FK
   }
 
-  class Post {
-    +id UUID
-    +kategoria string
-    +ekstremalnoscSkala number
-    +powodSzczegolnejUwagi string
+  class POSTS {
+    +id INT
+    +autor_id FK
+    +kategoria_id FK
+    +powod_uwagi_id FK
+    +skala_ekstremalnosci INT
   }
 
-  class Interakcja {
-    +id UUID
-    +typ string
-    +czas datetime
-    +czasSpedzonyNaPoscie number
+  class LIKES {
+    +user_id FK
+    +post_id FK
+    +czas_spedzony INT
   }
 
-  class Polubienie {
-    +id UUID
-    +typ string
-  }
-
-  class Komentarz {
-    +id UUID
-    +typ string
+  class COMMENTS {
+    +user_id FK
+    +post_id FK
     +tresc string
+    +czas_spedzony INT
   }
 
-  class Udostepnienie {
-    +id UUID
-    +typ string
+  class SHARES {
+    +from_user_id FK
+    +post_id FK
+    +to_user_id FK
+    +czas_spedzony INT
   }
 
-  class ProfilAnalityczny {
-    +idUzytkownika UUID
-    +zainteresowania string
-    +preferowanaTematyka string
-    +stopienZangazowania string
-    +profilPogladow string
-    +grupyPowiazan string
-    +wplywTrescNaOpiniaWczasie string
-    +profilAktywnosci string
-    +digitalFingerprint string
+  class POST_VIEWS {
+    +user_id FK
+    +post_id FK
+    +czas_start datetime
+    +czas_end datetime
   }
 
-  class Rola {
-    +nazwa string
+  class USER_PROFILES {
+    +user_id FK (1:1 z USERS)
+    +engagement_score float
+    +activity_profile string
+    +preferred_category_id FK
+    +preferred_topics string
+    +political_lean string
+    +political_score float
+    +extremism_exposure_score float
+    +opinion_influence_timeline string
+    +digital_fingerprint SHA256
   }
 
-  class Admin {
-    +dostepDoWszystkiego()
+  class ROLES {
+    +nazwa string (Admin, UzytkownikWidok)
   }
 
-  class UzytkownikWidok {
-    +widziPolubionePosty()
-    +widziSwojeKomentarze()
+  class POST_CATEGORIES {
+    +kategoria string
+    +flaga_polityczna boolean
+    +kierunek string
   }
 
-  %% Relationships
-  Uzytkownik "1" --> "0..*" Polubienie : wykonuje
-  Uzytkownik "1" --> "0..*" Komentarz : pisze
-  Uzytkownik "1" --> "0..*" Udostepnienie : udostepnia
+  class SPECIAL_ATTENTION_REASONS {
+    +powod string
+    +skala 1-5
+  }
 
-  Post "1" <-- "0..*" Polubienie : dotyczy
-  Post "1" <-- "0..*" Komentarz : dotyczy
-  Post "1" <-- "0..*" Udostepnienie : dotyczy
+  %% Relacje encji podstawowych i słowników
+  USERS "1" --> "0..1" ROLES : posiada rolę
+  POSTS "1" --> "0..1" POST_CATEGORIES : posiada kategorię
+  POSTS "1" --> "0..1" SPECIAL_ATTENTION_REASONS : może posiadać powód
 
-  Komentarz --> Post : dotyczy
-  Udostepnienie --> Uzytkownik : udostepniaKomu
+  %% Interakcje z postami (Zastąpienie generycznej "Interakcji" dokładnymi tabelami)
+  USERS "1" --> "0..*" LIKES : wykonuje
+  USERS "1" --> "0..*" COMMENTS : tworzy
+  USERS "1" --> "0..*" SHARES : inicjuje / odbiera
+  USERS "1" --> "0..*" POST_VIEWS : ogląda
 
-  %% Interakcje as specializations
-  Interakcja <|-- Polubienie
-  Interakcja <|-- Komentarz
-  Interakcja <|-- Udostepnienie
+  POSTS "1" <-- "0..*" LIKES : dotyczy
+  POSTS "1" <-- "0..*" COMMENTS : dotyczy
+  POSTS "1" <-- "0..*" SHARES : dotyczy
+  POSTS "1" <-- "0..*" POST_VIEWS : dotyczy
 
-  %% Profile
-  Uzytkownik "1" --> "0..1" ProfilAnalityczny : ma
-
-  %% Roles access
-  Rola <|-- Admin
-  Rola <|-- UzytkownikWidok
+  %% Profil Behawioralny
+  USERS "1" -- "1" USER_PROFILES : posiada
