@@ -24,6 +24,9 @@ services:
     container_name: pegasus-cloudbeaver
     ports:
       - "8978:8978"
+    environment:
+      CB_ADMIN_NAME: cbadmin
+      CB_ADMIN_PASSWORD: Admin1234!
     volumes:
       - cloudbeaver-data:/opt/cloudbeaver/workspace
     depends_on:
